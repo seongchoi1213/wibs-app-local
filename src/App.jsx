@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { db } from "./firebase";
 import { collection, addDoc, onSnapshot, query, orderBy, getDocs, updateDoc, doc, deleteDoc } from "firebase/firestore";
 
@@ -42,6 +42,54 @@ const ROLES    = ["부장","차장","과장","대리","주임"];
 const JISAS    = ["본사","수도권북부","수도권남부","중부지사","남부지사"];
 const ADMIN    = { id:"admin", name:"admin", role:"개발자", pw:"admin@wibs", jisa:"전체", phone:"", region:null, managerId:null, joinDate:"" };
 const LOG_COL  = {AUTH:"#1565C0",APPLY:"#2E7D32",APPROVE:"#4CAF50",REJECT:"#E53935",EDIT:"#F57F17",ERROR:"#B71C1C"};
+
+// ── 공휴일 API ──
+const HOLIDAY_API_KEY = "4170cabb77ae8d2b4455a19e09792e990839975bc204d6ce044300e39bf2c204";
+const holidayCache = {}; // { "2025": Set{"20250101", ...}, ... }
+
+async function fetchHolidays(year) {
+  if (holidayCache[year]) return holidayCache[year];
+  try {
+    const url = `https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo`
+      + `?serviceKey=${HOLIDAY_API_KEY}&solYear=${year}&numOfRows=50&_type=json`;
+    const res  = await fetch(url);
+    const json = await res.json();
+    const items = json?.response?.body?.items?.item;
+    const arr   = items ? (Array.isArray(items) ? items : [items]) : [];
+    const set   = new Set(arr.map(it => String(it.locdate)));
+    holidayCache[year] = set;
+    return set;
+  } catch {
+    holidayCache[year] = new Set();
+    return new Set();
+  }
+}
+
+// 주말 + 공휴일 제외한 실제 연차 일수 계산 (async)
+async function calcWorkdays(from, to) {
+  if (!from || !to) return 0;
+  const start = new Date(from), end = new Date(to);
+  if (start > end) return 0;
+
+  // 연도 목록 수집
+  const years = new Set();
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    years.add(d.getFullYear());
+  }
+  // 공휴일 모두 로드
+  const holidaySets = {};
+  await Promise.all([...years].map(async y => { holidaySets[y] = await fetchHolidays(y); }));
+
+  let count = 0;
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const dow = d.getDay();
+    if (dow === 0 || dow === 6) continue; // 주말
+    const key = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
+    if (holidaySets[d.getFullYear()]?.has(key)) continue; // 공휴일
+    count++;
+  }
+  return count;
+}
 
 const getPw = p => p.replace(/-/g,"").slice(-4);
 
@@ -127,6 +175,7 @@ export default function App() {
   const [modal, setModal]   = useState(null);
   const [editJoin, setEditJoin] = useState(null);
   const [form,  setForm]    = useState({from:"", to:"", reasonType:"개인사유", reasonCustom:""});
+  const [formDays, setFormDays] = useState(null);   // ← 미리보기 일수
   const [doneMsg, setDoneMsg] = useState("");
   const [mgmtMode, setMgmtMode] = useState("list");
   const [selUser,  setSelUser]  = useState(null);
@@ -135,6 +184,13 @@ export default function App() {
 
   const empById = id => users.find(x => x.id === id) || {};
   const usedDays = uid => reqs.filter(r => r.empId===uid && r.step==="완료").reduce((s,r) => s+r.days, 0);
+
+  // 날짜 바뀔 때마다 미리보기 일수 계산
+  useEffect(() => {
+    if (!form.from || !form.to) { setFormDays(null); return; }
+    setFormDays("계산 중...");
+    calcWorkdays(form.from, form.to).then(d => setFormDays(d));
+  }, [form.from, form.to]);
 
   // Firebase 실시간 동기화
   useEffect(() => {
@@ -193,15 +249,17 @@ export default function App() {
     setCu(null); setLoginInput({name:"",pw:""}); setLoginErr(""); setModal(null);
   }
 
-  function submitLeave() {
+  // ── submitLeave: 공휴일 API 반영 ──
+  async function submitLeave() {
     const reason = form.reasonType==="기타" ? form.reasonCustom.trim() : form.reasonType;
     if (!form.from||!form.to||!reason) { setDoneMsg("모든 항목을 입력해 주세요."); return; }
-    const days = Math.max(1, Math.round((new Date(form.to)-new Date(form.from))/86400000)+1);
+    const days = await calcWorkdays(form.from, form.to);
+    if (days === 0) { setDoneMsg("선택한 기간에 근무일이 없어요. (주말·공휴일)"); return; }
     const step = initStep(cu, users);
     const newReq = {id:"r"+Date.now(), empId:cu.id, type:"연차", from:form.from, to:form.to, days, reason, step, history:[]};
     addDoc(collection(db, "reqs"), newReq);
-    addLog("APPLY", `휴가신청: ${cu.name} / ${days}일 / ${reason} → ${step}`);
-    setForm({from:"",to:"",reasonType:"개인사유",reasonCustom:""});
+    addLog("APPLY", `휴가신청: ${cu.name} / ${days}일(근무일) / ${reason} → ${step}`);
+    setForm({from:"",to:"",reasonType:"개인사유",reasonCustom:""}); setFormDays(null);
     setDoneMsg("신청이 완료됐어요!"); setTimeout(() => { setDoneMsg(""); setTab("home"); }, 1200);
   }
 
@@ -293,6 +351,7 @@ export default function App() {
             </div>
             <div style={{background:"#F9F9F9",borderRadius:14,padding:"14px",marginBottom:12}}>
               <div style={{fontSize:28,fontWeight:700,color:"#333",textAlign:"center",padding:"6px 0"}}>{req.days} <span style={{fontSize:16,fontWeight:400}}>일</span></div>
+              <div style={{fontSize:11,color:"#999",textAlign:"center",marginBottom:2}}>(주말·공휴일 제외 근무일)</div>
               <div style={{fontSize:13,color:"#666",textAlign:"center",marginBottom:6}}>{fmtDate(req.from)}{req.from!==req.to?` ~ ${fmtDate(req.to)}`:""}</div>
               <div style={{fontSize:13,color:"#888",textAlign:"center"}}>사유: {req.reason}</div>
             </div>
@@ -360,6 +419,7 @@ export default function App() {
     );
   }
 
+  // ── ApplyTab: 일수 미리보기 포함 ──
   function ApplyTab() {
     return (
       <div>
@@ -370,10 +430,21 @@ export default function App() {
         <div style={SC}>
           <div style={{padding:"16px"}}>
             <div style={{fontSize:12,color:"#999",marginBottom:8}}>기간</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
               <input type="date" style={INP} value={form.from} onChange={e=>setForm({...form,from:e.target.value})}/>
               <input type="date" style={INP} value={form.to}   onChange={e=>setForm({...form,to:e.target.value})}/>
             </div>
+
+            {/* ── 일수 미리보기 ── */}
+            {form.from && form.to && (
+              <div style={{background:"#F0EFFE",borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span style={{fontSize:13,color:"#5046A6"}}>📅 실제 연차 일수 (주말·공휴일 제외)</span>
+                <span style={{fontSize:18,fontWeight:700,color:"#5046A6"}}>
+                  {formDays === null ? "-" : formDays === "계산 중..." ? "⏳" : `${formDays}일`}
+                </span>
+              </div>
+            )}
+
             <div style={{fontSize:12,color:"#999",marginBottom:8}}>사유</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:form.reasonType==="기타"?10:16}}>
               {REASONS.map(r=>(
