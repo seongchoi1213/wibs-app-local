@@ -47,7 +47,7 @@ const getPw = p => p.replace(/-/g,"").slice(-4);
 
 function calcAnnual(d) {
   if (!d) return "-";
-  const today = new Date("2026-05-06"), join = new Date(d);
+  const today = new Date(), join = new Date(d);
   const months = (today.getFullYear()-join.getFullYear())*12 + today.getMonth()-join.getMonth();
   let y = today.getFullYear()-join.getFullYear();
   const a = new Date(join); a.setFullYear(today.getFullYear());
@@ -58,7 +58,7 @@ function calcAnnual(d) {
 
 function workedText(d) {
   if (!d) return "미입력";
-  const today = new Date("2026-05-06"), join = new Date(d);
+  const today = new Date(), join = new Date(d);
   let y = today.getFullYear()-join.getFullYear();
   const a = new Date(join); a.setFullYear(today.getFullYear());
   if (today < a) y--;
