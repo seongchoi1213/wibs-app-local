@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { db } from "./firebase";
 import { collection, addDoc, onSnapshot, query, orderBy, getDocs, updateDoc, doc, deleteDoc } from "firebase/firestore";
 
@@ -129,7 +129,7 @@ function StepBadge({step}) {
   return <span style={{fontSize:11,padding:"3px 9px",borderRadius:20,background:s.bg,color:s.color,fontWeight:600,whiteSpace:"nowrap"}}>{step}</span>;
 }
 
-const PH  = {maxWidth:390,margin:"0 auto",fontFamily:"-apple-system,'Malgun Gothic',sans-serif",background:"#F7F7F9",minHeight:600,position:"relative"};
+const PH  = {maxWidth:430,margin:"0 auto",fontFamily:"-apple-system,'Malgun Gothic',sans-serif",background:"#F7F7F9",minHeight:'100vh',position:"relative"};
 const TB  = {background:"#fff",padding:"16px 20px 12px",borderBottom:"1px solid #F0F0F0",display:"flex",alignItems:"center",justifyContent:"space-between"};
 const BD  = {padding:"12px 16px 90px"};
 const NB  = {position:"sticky",bottom:0,background:"#fff",borderTop:"1px solid #F0F0F0",display:"flex",padding:"8px 0 6px"};
