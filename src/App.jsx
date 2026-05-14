@@ -45,7 +45,7 @@ const LOG_COL  = {AUTH:"#1565C0",APPLY:"#2E7D32",APPROVE:"#4CAF50",REJECT:"#E539
 
 // ── 공휴일 API ──
 const HOLIDAY_API_KEY = "4170cabb77ae8d2b4455a19e09792e990839975bc204d6ce044300e39bf2c204";
-const holidayCache = {}; // { "2025": Set{"20250101", ...}, ... }
+const holidayCache = {};
 
 async function fetchHolidays(year) {
   if (holidayCache[year]) return holidayCache[year];
@@ -65,27 +65,20 @@ async function fetchHolidays(year) {
   }
 }
 
-// 주말 + 공휴일 제외한 실제 연차 일수 계산 (async)
 async function calcWorkdays(from, to) {
   if (!from || !to) return 0;
   const start = new Date(from), end = new Date(to);
   if (start > end) return 0;
-
-  // 연도 목록 수집
   const years = new Set();
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    years.add(d.getFullYear());
-  }
-  // 공휴일 모두 로드
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) years.add(d.getFullYear());
   const holidaySets = {};
   await Promise.all([...years].map(async y => { holidaySets[y] = await fetchHolidays(y); }));
-
   let count = 0;
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const dow = d.getDay();
-    if (dow === 0 || dow === 6) continue; // 주말
+    if (dow === 0 || dow === 6) continue;
     const key = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
-    if (holidaySets[d.getFullYear()]?.has(key)) continue; // 공휴일
+    if (holidaySets[d.getFullYear()]?.has(key)) continue;
     count++;
   }
   return count;
@@ -173,9 +166,9 @@ export default function App() {
   const [loginErr,   setLoginErr]   = useState("");
   const [tab,   setTab]     = useState("home");
   const [modal, setModal]   = useState(null);
-  const [editJoin, setEditJoin] = useState(null);
+  const [editJoin, setEditJoin] = useState(null); // {uid, val(입사일), phone(전화번호)}
   const [form,  setForm]    = useState({from:"", to:"", reasonType:"개인사유", reasonCustom:""});
-  const [formDays, setFormDays] = useState(null);   // ← 미리보기 일수
+  const [formDays, setFormDays] = useState(null);
   const [doneMsg, setDoneMsg] = useState("");
   const [mgmtMode, setMgmtMode] = useState("list");
   const [selUser,  setSelUser]  = useState(null);
@@ -185,14 +178,12 @@ export default function App() {
   const empById = id => users.find(x => x.id === id) || {};
   const usedDays = uid => reqs.filter(r => r.empId===uid && r.step==="완료").reduce((s,r) => s+r.days, 0);
 
-  // 날짜 바뀔 때마다 미리보기 일수 계산
   useEffect(() => {
     if (!form.from || !form.to) { setFormDays(null); return; }
     setFormDays("계산 중...");
     calcWorkdays(form.from, form.to).then(d => setFormDays(d));
   }, [form.from, form.to]);
 
-  // Firebase 실시간 동기화
   useEffect(() => {
     const unsubReqs = onSnapshot(collection(db, "reqs"), snap => {
       setReqs(snap.docs.map(d => d.data()).sort((a,b) => b.id.localeCompare(a.id)));
@@ -204,8 +195,7 @@ export default function App() {
   }, []);
 
   function addLog(type, msg) {
-    const log = {time: new Date().toLocaleTimeString("ko-KR"), type, msg};
-    addDoc(collection(db, "logs"), log);
+    addDoc(collection(db, "logs"), {time: new Date().toLocaleTimeString("ko-KR"), type, msg});
   }
 
   function myPending(u) {
@@ -249,7 +239,6 @@ export default function App() {
     setCu(null); setLoginInput({name:"",pw:""}); setLoginErr(""); setModal(null);
   }
 
-  // ── submitLeave: 공휴일 API 반영 ──
   async function submitLeave() {
     const reason = form.reasonType==="기타" ? form.reasonCustom.trim() : form.reasonType;
     if (!form.from||!form.to||!reason) { setDoneMsg("모든 항목을 입력해 주세요."); return; }
@@ -283,9 +272,11 @@ export default function App() {
     setModal(null);
   }
 
+  // ── 입사일 + 전화번호 저장 (통합) ──
   function saveJoin() {
-    addLog("EDIT",`입사일 수정: ${empById(editJoin.uid).name} → ${editJoin.val}`);
-    setUsers(users.map(u => u.id===editJoin.uid ? {...u,joinDate:editJoin.val} : u));
+    const u = empById(editJoin.uid);
+    addLog("EDIT",`정보수정: ${u.name} / 입사일: ${editJoin.val} / 전화: ${editJoin.phone}`);
+    setUsers(users.map(u => u.id===editJoin.uid ? {...u, joinDate:editJoin.val, phone:editJoin.phone} : u));
     setEditJoin(null);
   }
 
@@ -300,6 +291,8 @@ export default function App() {
   function removeUser(uid) { addLog("EDIT",`퇴사: ${empById(uid).name}`); setUsers(users.filter(u=>u.id!==uid)); setSelUser(null); }
   function updateRole(uid, role) { addLog("EDIT",`직급변경: ${empById(uid).name}→${role}`); setUsers(users.map(u=>u.id===uid?{...u,role}:u)); }
   function updateJisa(uid, jisa) { addLog("EDIT",`지사변경: ${empById(uid).name}→${jisa}`); setUsers(users.map(u=>u.id===uid?{...u,jisa}:u)); }
+  // ── 전화번호만 빠르게 수정 (부장 인원관리 패널용) ──
+  function updatePhone(uid, phone) { addLog("EDIT",`전화변경: ${empById(uid).name}→${phone}`); setUsers(users.map(u=>u.id===uid?{...u,phone}:u)); }
 
   // ── 공통 컴포넌트 ──
   function AnnualCard({user}) {
@@ -386,12 +379,16 @@ export default function App() {
     );
   }
 
+  // ── 입사일 + 전화번호 통합 수정 모달 ──
   function EditJoinModal() {
     return (
       <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:"0 24px"}}>
         <div style={{background:"#fff",borderRadius:20,padding:"24px",width:"100%",maxWidth:340}}>
-          <div style={{fontWeight:700,fontSize:16,marginBottom:16}}>입사일 수정</div>
-          <input type="date" style={{...INP,marginBottom:16}} value={editJoin.val} onChange={e=>setEditJoin({...editJoin,val:e.target.value})}/>
+          <div style={{fontWeight:700,fontSize:16,marginBottom:16}}>구성원 정보 수정</div>
+          <div style={{fontSize:12,color:"#999",marginBottom:6}}>입사일</div>
+          <input type="date" style={{...INP,marginBottom:14}} value={editJoin.val} onChange={e=>setEditJoin({...editJoin,val:e.target.value})}/>
+          <div style={{fontSize:12,color:"#999",marginBottom:6}}>휴대폰 번호</div>
+          <input type="tel" placeholder="010-0000-0000" style={{...INP,marginBottom:20}} value={editJoin.phone} onChange={e=>setEditJoin({...editJoin,phone:e.target.value})}/>
           <div style={{display:"flex",gap:10}}>
             <button onClick={()=>setEditJoin(null)} style={B2("#999")}>취소</button>
             <button onClick={saveJoin} style={B1()}>저장</button>
@@ -419,7 +416,6 @@ export default function App() {
     );
   }
 
-  // ── ApplyTab: 일수 미리보기 포함 ──
   function ApplyTab() {
     return (
       <div>
@@ -434,8 +430,6 @@ export default function App() {
               <input type="date" style={INP} value={form.from} onChange={e=>setForm({...form,from:e.target.value})}/>
               <input type="date" style={INP} value={form.to}   onChange={e=>setForm({...form,to:e.target.value})}/>
             </div>
-
-            {/* ── 일수 미리보기 ── */}
             {form.from && form.to && (
               <div style={{background:"#F0EFFE",borderRadius:10,padding:"10px 14px",marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <span style={{fontSize:13,color:"#5046A6"}}>📅 실제 연차 일수 (주말·공휴일 제외)</span>
@@ -444,7 +438,6 @@ export default function App() {
                 </span>
               </div>
             )}
-
             <div style={{fontSize:12,color:"#999",marginBottom:8}}>사유</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:form.reasonType==="기타"?10:16}}>
               {REASONS.map(r=>(
@@ -566,7 +559,7 @@ export default function App() {
         {editJoin && <EditJoinModal/>}
         {csvModal && <CsvModal/>}
         <div style={TB}>
-          <div style={{fontWeight:700,fontSize:16,color:"#222"}}>{tab==="home"?"홈":tab==="apply"?"휴가 신청":tab==="list"?"팀 내역":"입사일 관리"}</div>
+          <div style={{fontWeight:700,fontSize:16,color:"#222"}}>{tab==="home"?"홈":tab==="apply"?"휴가 신청":tab==="list"?"팀 내역":"팀원 관리"}</div>
           <button onClick={logout} style={{background:"none",border:"none",fontSize:13,color:"#999",cursor:"pointer"}}>로그아웃</button>
         </div>
         <div style={BD}>
@@ -617,16 +610,17 @@ export default function App() {
               ))}
             </div>
           )}
+          {/* 과장: 팀원 관리 (입사일 + 전화번호) */}
           {tab==="team" && (
             <div>
-              <div style={{fontSize:12,color:"#999",marginBottom:8,paddingLeft:2}}>탭해서 입사일을 입력하세요</div>
+              <div style={{fontSize:12,color:"#999",marginBottom:8,paddingLeft:2}}>탭해서 입사일·전화번호를 수정하세요</div>
               <div style={SC}>
                 {users.filter(x=>x.managerId===cu.id).map((x,i,arr)=>(
-                  <div key={x.id} onClick={()=>setEditJoin({uid:x.id,val:x.joinDate})} style={{...RW(i===arr.length-1),cursor:"pointer"}}>
+                  <div key={x.id} onClick={()=>setEditJoin({uid:x.id, val:x.joinDate, phone:x.phone})} style={{...RW(i===arr.length-1),cursor:"pointer"}}>
                     <Av name={x.name} size={36}/>
                     <div style={{flex:1}}>
                       <div style={{fontWeight:500,fontSize:14,color:"#222"}}>{x.name} <span style={{fontSize:12,color:"#999"}}>{x.role}</span></div>
-                      <div style={{fontSize:12,color:"#999",marginTop:2}}>{x.joinDate||"미입력"}</div>
+                      <div style={{fontSize:12,color:"#999",marginTop:2}}>{x.phone||"번호 미입력"} · {x.joinDate||"입사일 미입력"}</div>
                     </div>
                     <div style={{fontSize:12,color:"#5046A6"}}>수정</div>
                   </div>
@@ -636,7 +630,7 @@ export default function App() {
           )}
         </div>
         <div style={NB}>
-          {[["home","홈",<IcoHome/>],["apply","신청",<IcoPlus/>],["list","팀내역",<IcoList/>],["team","입사일",<IcoTeam/>]].map(([k,l,ic])=>(
+          {[["home","홈",<IcoHome/>],["apply","신청",<IcoPlus/>],["list","팀내역",<IcoList/>],["team","팀원관리",<IcoTeam/>]].map(([k,l,ic])=>(
             <button key={k} onClick={()=>setTab(k)} style={NB_(tab===k)}>{ic}{l}</button>
           ))}
         </div>
@@ -730,16 +724,17 @@ export default function App() {
               </div>
             </div>
           )}
+          {/* 차장: 전체 인원 입사일 + 전화번호 수정 */}
           {tab==="team" && (
             <div>
-              <div style={{fontSize:12,color:"#999",marginBottom:8,paddingLeft:2}}>탭해서 입사일을 수정하세요</div>
+              <div style={{fontSize:12,color:"#999",marginBottom:8,paddingLeft:2}}>탭해서 입사일·전화번호를 수정하세요 (전체 인원)</div>
               <div style={SC}>
-                {users.filter(x=>myR.some(r=>x.region&&x.region.includes(r))&&x.role!=="부장").map((x,i,arr)=>(
-                  <div key={x.id} onClick={()=>setEditJoin({uid:x.id,val:x.joinDate})} style={{...RW(i===arr.length-1),cursor:"pointer"}}>
+                {users.filter(x=>x.role!=="부장").map((x,i,arr)=>(
+                  <div key={x.id} onClick={()=>setEditJoin({uid:x.id, val:x.joinDate, phone:x.phone})} style={{...RW(i===arr.length-1),cursor:"pointer"}}>
                     <Av name={x.name} size={36}/>
                     <div style={{flex:1}}>
-                      <div style={{fontWeight:500,fontSize:14,color:"#222"}}>{x.name} <span style={{fontSize:12,color:"#999"}}>{x.role}</span></div>
-                      <div style={{fontSize:12,color:"#999",marginTop:2}}>{x.joinDate||"미입력"} · 연차 {calcAnnual(x.joinDate)}일</div>
+                      <div style={{fontWeight:500,fontSize:14,color:"#222"}}>{x.name} <span style={{fontSize:12,color:"#999"}}>{x.role} · {x.jisa}</span></div>
+                      <div style={{fontSize:12,color:"#999",marginTop:2}}>{x.phone||"번호 미입력"} · {x.joinDate||"입사일 미입력"}</div>
                     </div>
                     <div style={{fontSize:12,color:"#5046A6"}}>수정</div>
                   </div>
@@ -887,10 +882,11 @@ export default function App() {
                                 <button key={j} onClick={()=>updateJisa(x.id,j)} style={{padding:"6px 14px",border:x.jisa===j?"2px solid #5046A6":"1.5px solid #EFEFEF",borderRadius:10,background:x.jisa===j?"#F0EFFE":"#fff",color:x.jisa===j?"#5046A6":"#666",cursor:"pointer",fontSize:12,fontWeight:x.jisa===j?600:400}}>{j}</button>
                               ))}
                             </div>
-                            <div style={{fontSize:12,color:"#999",marginBottom:6}}>입사일</div>
+                            {/* 부장: 입사일 + 전화번호 통합 수정 버튼 */}
+                            <div style={{fontSize:12,color:"#999",marginBottom:6}}>입사일 · 전화번호</div>
                             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-                              <div style={{flex:1,fontSize:13,color:"#444"}}>{x.joinDate||"미입력"}</div>
-                              <button onClick={()=>setEditJoin({uid:x.id,val:x.joinDate})} style={{padding:"6px 12px",border:"1.5px solid #5046A6",borderRadius:8,background:"#F0EFFE",color:"#5046A6",cursor:"pointer",fontSize:12}}>수정</button>
+                              <div style={{flex:1,fontSize:13,color:"#444"}}>{x.joinDate||"입사일 미입력"} · {x.phone||"번호 미입력"}</div>
+                              <button onClick={()=>setEditJoin({uid:x.id, val:x.joinDate, phone:x.phone})} style={{padding:"6px 12px",border:"1.5px solid #5046A6",borderRadius:8,background:"#F0EFFE",color:"#5046A6",cursor:"pointer",fontSize:12}}>수정</button>
                             </div>
                             <button onClick={()=>removeUser(x.id)} style={{width:"100%",padding:"10px",border:"1.5px solid #E53935",borderRadius:10,background:"#FFF0F0",color:"#E53935",cursor:"pointer",fontSize:13,fontWeight:600}}>퇴사 처리 (제거)</button>
                           </div>
@@ -1042,4 +1038,3 @@ export default function App() {
 
   return null;
 }
-
