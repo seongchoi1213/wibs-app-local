@@ -3,40 +3,6 @@ import { db } from "./firebase";
 import { collection, addDoc, onSnapshot, query, orderBy, getDocs, updateDoc, doc, deleteDoc } from "firebase/firestore";
 
 const INIT_USERS = [
-<<<<<<< HEAD
-  { id:"u00", name:"이경수", role:"부장",  jisa:"본사",      phone:"010-2110-7522", region:null,                   managerId:null,  joinDate:"" },
-  { id:"u01", name:"전병준", role:"차장",  jisa:"중부지사",  phone:"010-2241-3646", region:"중부지사",              managerId:"u00", joinDate:"" },
-  { id:"u02", name:"정윤영", role:"차장",  jisa:"수도권남부",phone:"010-4716-8114", region:"수도권남부/수도권북부",  managerId:"u00", joinDate:"" },
-  { id:"u03", name:"김선용", role:"과장",  jisa:"중부지사",  phone:"010-7173-5945", region:"중부지사",              managerId:"u01", joinDate:"" },
-  { id:"u10", name:"최순민", role:"차장",  jisa:"남부지사",  phone:"010-0000-8884", region:"부산/대구경북",          managerId:"u00", joinDate:"2007-09-19" },
-  { id:"u11", name:"김성권", role:"차장",  jisa:"남부지사",  phone:"010-0000-7590", region:"경남/제주",             managerId:"u00", joinDate:"2010-07-10" },
-  { id:"u12", name:"최성",   role:"과장",  jisa:"남부지사",  phone:"010-0000-9654", region:"대구경북",              managerId:"u10", joinDate:"2013-07-15" },
-  { id:"u13", name:"배재열", role:"과장",  jisa:"남부지사",  phone:"010-0000-6756", region:"경남",                 managerId:"u11", joinDate:"2013-12-15" },
-  { id:"u14", name:"김도영", role:"과장",  jisa:"남부지사",  phone:"010-0000-9088", region:"제주",                 managerId:"u11", joinDate:"2013-11-18" },
-  { id:"u20", name:"김규연", role:"대리",  jisa:"중부지사",  phone:"010-2023-2810", region:"중부지사",              managerId:"u03", joinDate:"" },
-  { id:"u21", name:"유근우", role:"대리",  jisa:"중부지사",  phone:"010-2858-6282", region:"중부지사",              managerId:"u03", joinDate:"" },
-  { id:"u22", name:"장문석", role:"대리",  jisa:"중부지사",  phone:"010-7997-0383", region:"중부지사",              managerId:"u03", joinDate:"" },
-  { id:"u23", name:"장성진", role:"대리",  jisa:"중부지사",  phone:"010-7349-3988", region:"중부지사",              managerId:"u03", joinDate:"" },
-  { id:"u24", name:"차윤철", role:"대리",  jisa:"중부지사",  phone:"010-8624-3455", region:"중부지사",              managerId:"u03", joinDate:"" },
-  { id:"u25", name:"이종명", role:"주임",  jisa:"중부지사",  phone:"010-4179-8000", region:"중부지사",              managerId:"u03", joinDate:"" },
-  { id:"u30", name:"김동윤", role:"대리",  jisa:"수도권남부",phone:"010-3225-2228", region:"수도권남부",             managerId:"u02", joinDate:"" },
-  { id:"u31", name:"박상혁", role:"대리",  jisa:"수도권남부",phone:"010-5480-4121", region:"수도권남부",             managerId:"u02", joinDate:"" },
-  { id:"u32", name:"박훈희", role:"대리",  jisa:"수도권남부",phone:"010-3835-7933", region:"수도권남부",             managerId:"u02", joinDate:"" },
-  { id:"u33", name:"서석현", role:"대리",  jisa:"수도권남부",phone:"010-2920-6394", region:"수도권남부",             managerId:"u02", joinDate:"" },
-  { id:"u34", name:"황언모", role:"대리",  jisa:"수도권남부",phone:"010-2709-1026", region:"수도권남부",             managerId:"u02", joinDate:"" },
-  { id:"u40", name:"김준연", role:"대리",  jisa:"수도권북부",phone:"010-2060-6914", region:"수도권북부",             managerId:"u02", joinDate:"" },
-  { id:"u41", name:"박지영", role:"대리",  jisa:"수도권북부",phone:"010-3033-0323", region:"수도권북부",             managerId:"u02", joinDate:"" },
-  { id:"u42", name:"안병욱", role:"대리",  jisa:"수도권북부",phone:"010-6285-6892", region:"수도권북부",             managerId:"u02", joinDate:"" },
-  { id:"u43", name:"양형주", role:"대리",  jisa:"수도권북부",phone:"010-3234-4175", region:"수도권북부",             managerId:"u02", joinDate:"" },
-  { id:"u44", name:"이재민", role:"대리",  jisa:"수도권북부",phone:"010-7479-6437", region:"수도권북부",             managerId:"u02", joinDate:"" },
-  { id:"u45", name:"강명진", role:"주임",  jisa:"수도권북부",phone:"010-5545-3670", region:"수도권북부",             managerId:"u02", joinDate:"" },
-  { id:"u46", name:"강호연", role:"주임",  jisa:"수도권북부",phone:"010-5923-2966", region:"수도권북부",             managerId:"u02", joinDate:"" },
-  { id:"u47", name:"장호섭", role:"주임",  jisa:"수도권북부",phone:"010-2083-3500", region:"수도권북부",             managerId:"u02", joinDate:"" },
-  { id:"u50", name:"구상회", role:"대리",  jisa:"남부지사",  phone:"010-0000-2045", region:"부산",                 managerId:"u10", joinDate:"2013-10-16" },
-  { id:"u51", name:"최성일", role:"대리",  jisa:"남부지사",  phone:"010-0000-1555", region:"부산",                 managerId:"u10", joinDate:"2014-01-07" },
-  { id:"u52", name:"이형탁", role:"대리",  jisa:"남부지사",  phone:"010-0000-2658", region:"대구경북",              managerId:"u12", joinDate:"2013-07-01" },
-  { id:"u53", name:"이선우", role:"대리",  jisa:"남부지사",  phone:"010-0000-6333", region:"대구경북",              managerId:"u12", joinDate:"2018-12-04" },
-=======
   { id:"u00", name:"이경수", role:"부장",  jisa:"본사",       phone:"010-2110-7522", region:null,                  managerId:null,  joinDate:"" },
   { id:"u01", name:"전병준", role:"차장",  jisa:"중부지사",   phone:"010-2241-3646", region:"중부지사",             managerId:"u00", joinDate:"" },
   { id:"u02", name:"정윤영", role:"차장",  jisa:"수도권남부", phone:"010-4716-8114", region:"수도권남부/수도권북부", managerId:"u00", joinDate:"" },
@@ -69,7 +35,6 @@ const INIT_USERS = [
   { id:"u51", name:"최성일", role:"대리",  jisa:"남부지사",   phone:"010-0000-1555", region:"부산",                managerId:"u10", joinDate:"2014-01-07" },
   { id:"u52", name:"이형탁", role:"대리",  jisa:"남부지사",   phone:"010-0000-2658", region:"대구경북",             managerId:"u12", joinDate:"2013-07-01" },
   { id:"u53", name:"이선우", role:"대리",  jisa:"남부지사",   phone:"010-0000-6333", region:"대구경북",             managerId:"u12", joinDate:"2018-12-04" },
->>>>>>> 0aaca5d (Firebase 완전 연동 최종버전)
 ];
 
 const REASONS  = ["개인사유","병가","공가","기타"];
@@ -129,7 +94,7 @@ function StepBadge({step}) {
   return <span style={{fontSize:11,padding:"3px 9px",borderRadius:20,background:s.bg,color:s.color,fontWeight:600,whiteSpace:"nowrap"}}>{step}</span>;
 }
 
-const PH  = {maxWidth:430,margin:"0 auto",fontFamily:"-apple-system,'Malgun Gothic',sans-serif",background:"#F7F7F9",minHeight:'100vh',position:"relative"};
+const PH  = {width:"100%",maxWidth:430,margin:"0 auto",fontFamily:"-apple-system,'Malgun Gothic',sans-serif",background:"#F7F7F9",minHeight:"100vh",position:"relative"};
 const TB  = {background:"#fff",padding:"16px 20px 12px",borderBottom:"1px solid #F0F0F0",display:"flex",alignItems:"center",justifyContent:"space-between"};
 const BD  = {padding:"12px 16px 90px"};
 const NB  = {position:"sticky",bottom:0,background:"#fff",borderTop:"1px solid #F0F0F0",display:"flex",padding:"8px 0 6px"};
@@ -152,36 +117,20 @@ const IcoChev = () => <svg width="15" height="15" fill="none" stroke="#CCC" stro
 const IcoX = () => <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
 
 export default function App() {
-<<<<<<< HEAD
-  const [users, setUsers]     = useState(INIT_USERS);
-  const [reqs,  setReqs]      = useState([]);
-  const [logs,  setLogs]      = useState([]);
-  const [cu,    setCu]        = useState(null);
-=======
   const [users, setUsers]   = useState(INIT_USERS);
   const [reqs,  setReqs]    = useState([]);
   const [logs,  setLogs]    = useState([]);
   const [cu,    setCu]      = useState(null);
->>>>>>> 0aaca5d (Firebase 완전 연동 최종버전)
   const [loginInput, setLoginInput] = useState({name:"", pw:""});
   const [loginErr,   setLoginErr]   = useState("");
   const [tab,   setTab]     = useState("home");
   const [modal, setModal]   = useState(null);
   const [editJoin, setEditJoin] = useState(null);
-<<<<<<< HEAD
-  const [form,  setForm]      = useState({from:"", to:"", reasonType:"개인사유", reasonCustom:""});
-=======
   const [form,  setForm]    = useState({from:"", to:"", reasonType:"개인사유", reasonCustom:""});
->>>>>>> 0aaca5d (Firebase 완전 연동 최종버전)
   const [doneMsg, setDoneMsg] = useState("");
   const [mgmtMode, setMgmtMode] = useState("list");
   const [selUser,  setSelUser]  = useState(null);
   const [newUser,  setNewUser]  = useState({name:"",role:"대리",jisa:"중부지사",phone:"010-",region:"",managerId:"",joinDate:""});
-<<<<<<< HEAD
-
-  const empById = id => users.find(x => x.id === id) || {};
-  const usedDays = uid => reqs.filter(r => r.empId===uid && r.step==="완료").reduce((s,r) => s+r.days, 0);
-=======
   const [csvModal, setCsvModal] = useState(null);
 
   const empById = id => users.find(x => x.id === id) || {};
@@ -197,10 +146,10 @@ export default function App() {
     });
     return () => { unsubReqs(); unsubLogs(); };
   }, []);
->>>>>>> 0aaca5d (Firebase 완전 연동 최종버전)
 
   function addLog(type, msg) {
-    setLogs(prev => [{time: new Date().toLocaleTimeString("ko-KR"), type, msg}, ...prev].slice(0,100));
+    const log = {time: new Date().toLocaleTimeString("ko-KR"), type, msg};
+    addDoc(collection(db, "logs"), log);
   }
 
   function myPending(u) {
@@ -216,13 +165,7 @@ export default function App() {
     return [];
   }
 
-<<<<<<< HEAD
-  const [csvModal, setCsvModal] = useState(null);
-
-  function exportExcel(data, filename) {
-=======
   function exportCsv(data, filename) {
->>>>>>> 0aaca5d (Firebase 완전 연동 최종버전)
     const header = ["이름","직급","지사","지역","시작일","종료일","일수","사유","상태","처리이력"].join(",");
     const rows = data.map(r => {
       const e = empById(r.empId);
@@ -230,12 +173,7 @@ export default function App() {
       return [e.name,e.role,e.jisa,e.region||"",r.from,r.to,r.days,r.reason,r.step,hist]
         .map(v => `"${String(v).replace(/"/g,'""')}"`).join(",");
     });
-<<<<<<< HEAD
-    const csv = [header,...rows].join("\n");
-    setCsvModal({filename, csv});
-=======
     setCsvModal({filename, csv:[header,...rows].join("\n")});
->>>>>>> 0aaca5d (Firebase 완전 연동 최종버전)
     addLog("EDIT", `엑셀 출력: ${filename} (${data.length}건)`);
   }
 
@@ -260,28 +198,13 @@ export default function App() {
     if (!form.from||!form.to||!reason) { setDoneMsg("모든 항목을 입력해 주세요."); return; }
     const days = Math.max(1, Math.round((new Date(form.to)-new Date(form.from))/86400000)+1);
     const step = initStep(cu, users);
-<<<<<<< HEAD
-    setReqs([{id:"r"+Date.now(), empId:cu.id, type:"연차", from:form.from, to:form.to, days, reason, step, history:[]}, ...reqs]);
-=======
     const newReq = {id:"r"+Date.now(), empId:cu.id, type:"연차", from:form.from, to:form.to, days, reason, step, history:[]};
     addDoc(collection(db, "reqs"), newReq);
->>>>>>> 0aaca5d (Firebase 완전 연동 최종버전)
     addLog("APPLY", `휴가신청: ${cu.name} / ${days}일 / ${reason} → ${step}`);
     setForm({from:"",to:"",reasonType:"개인사유",reasonCustom:""});
     setDoneMsg("신청이 완료됐어요!"); setTimeout(() => { setDoneMsg(""); setTab("home"); }, 1200);
   }
 
-<<<<<<< HEAD
-  function handleApprove(req) {
-    if (cu.role==="과장") { setReqs(reqs.map(r => r.id===req.id ? {...r,step:"차장승인대기",history:[...r.history,{actor:cu.name,action:"과장승인"}]} : r)); addLog("APPROVE",`과장승인: ${cu.name}→${empById(req.empId).name}`); }
-    else if (cu.role==="차장") { setReqs(reqs.map(r => r.id===req.id ? {...r,step:"완료",history:[...r.history,{actor:cu.name,action:"차장승인"}]} : r)); addLog("APPROVE",`차장승인: ${cu.name}→${empById(req.empId).name}`); }
-    else if (cu.role==="부장") { setReqs(reqs.map(r => r.id===req.id ? {...r,step:"완료",history:[...r.history,{actor:cu.name,action:"부장승인"}]} : r)); addLog("APPROVE",`부장승인: ${cu.name}→${empById(req.empId).name}`); }
-    setModal(null);
-  }
-
-  function handleReject(req, reason) {
-    setReqs(reqs.map(r => r.id===req.id ? {...r,step:"반려",history:[...r.history,{actor:cu.name,action:"반려",reason}]} : r));
-=======
   async function handleApprove(req) {
     let updated;
     if (cu.role==="과장") { updated={...req,step:"차장승인대기",history:[...req.history,{actor:cu.name,action:"과장승인"}]}; addLog("APPROVE",`과장승인: ${cu.name}→${empById(req.empId).name}`); }
@@ -298,7 +221,6 @@ export default function App() {
     const snap = await getDocs(collection(db,"reqs"));
     const docRef = snap.docs.find(d => d.data().id===req.id);
     if (docRef) await updateDoc(doc(db,"reqs",docRef.id), updated);
->>>>>>> 0aaca5d (Firebase 완전 연동 최종버전)
     addLog("REJECT",`반려: ${cu.name}→${empById(req.empId).name} / ${reason}`);
     setModal(null);
   }
@@ -321,30 +243,7 @@ export default function App() {
   function updateRole(uid, role) { addLog("EDIT",`직급변경: ${empById(uid).name}→${role}`); setUsers(users.map(u=>u.id===uid?{...u,role}:u)); }
   function updateJisa(uid, jisa) { addLog("EDIT",`지사변경: ${empById(uid).name}→${jisa}`); setUsers(users.map(u=>u.id===uid?{...u,jisa}:u)); }
 
-<<<<<<< HEAD
-  function CsvModal() {
-    return (
-      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:300}}>
-        <div style={{background:"#fff",borderRadius:"20px 20px 0 0",width:"100%",maxWidth:390,paddingBottom:24}}>
-          <div style={{background:"#1a7a3c",borderRadius:"20px 20px 0 0",padding:"16px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{color:"#fff",fontWeight:700,fontSize:15}}>📥 {csvModal.filename}</div>
-            <button onClick={()=>setCsvModal(null)} style={{background:"rgba(255,255,255,0.2)",border:"none",borderRadius:"50%",width:32,height:32,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:"#fff"}}><IcoX/></button>
-          </div>
-          <div style={{padding:"16px"}}>
-            <div style={{fontSize:12,color:"#666",marginBottom:10}}>아래 내용을 전체 선택 후 복사하여 메모장에 붙여넣고 .csv 파일로 저장하세요.</div>
-            <textarea readOnly value={csvModal.csv}
-              style={{width:"100%",height:200,fontSize:11,fontFamily:"monospace",border:"1.5px solid #EFEFEF",borderRadius:10,padding:"10px",boxSizing:"border-box",resize:"none",background:"#FAFAFA",color:"#333"}}
-              onClick={e=>e.target.select()}
-            />
-            <button onClick={()=>{ navigator.clipboard.writeText(csvModal.csv); }} style={{...B1("#1a7a3c"),borderRadius:12,marginTop:10}}>📋 클립보드에 복사</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-=======
   // ── 공통 컴포넌트 ──
->>>>>>> 0aaca5d (Firebase 완전 연동 최종버전)
   function AnnualCard({user}) {
     const total=calcAnnual(user.joinDate), used=usedDays(user.id);
     const left = typeof total==="number" ? Math.max(total-used,0) : "-";
@@ -437,8 +336,6 @@ export default function App() {
           <div style={{display:"flex",gap:10}}>
             <button onClick={()=>setEditJoin(null)} style={B2("#999")}>취소</button>
             <button onClick={saveJoin} style={B1()}>저장</button>
-<<<<<<< HEAD
-=======
           </div>
         </div>
       </div>
@@ -457,7 +354,6 @@ export default function App() {
             <div style={{fontSize:12,color:"#666",marginBottom:10}}>아래 내용을 전체 선택 후 복사 → 메모장에 붙여넣고 .csv 로 저장하세요.</div>
             <textarea readOnly value={csvModal.csv} style={{width:"100%",height:200,fontSize:11,fontFamily:"monospace",border:"1.5px solid #EFEFEF",borderRadius:10,padding:"10px",boxSizing:"border-box",resize:"none",background:"#FAFAFA",color:"#333"}} onClick={e=>e.target.select()}/>
             <button onClick={()=>navigator.clipboard.writeText(csvModal.csv)} style={{...B1("#1a7a3c"),borderRadius:12,marginTop:10}}>📋 클립보드에 복사</button>
->>>>>>> 0aaca5d (Firebase 완전 연동 최종버전)
           </div>
         </div>
       </div>
@@ -747,11 +643,7 @@ export default function App() {
           {tab==="list" && (
             <div>
               <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
-<<<<<<< HEAD
-                <button onClick={()=>exportExcel(allR,`연차내역_${cu.name}.csv`)} style={XLBTN}>📥 엑셀 저장</button>
-=======
                 <button onClick={()=>exportCsv(allR,`연차내역_${cu.name}.csv`)} style={XLBTN}>📥 엑셀 저장</button>
->>>>>>> 0aaca5d (Firebase 완전 연동 최종버전)
               </div>
               <div style={SC}>
                 {allR.length===0 && <div style={{padding:"32px",textAlign:"center",color:"#BBB",fontSize:14}}>내역 없음</div>}
@@ -861,11 +753,7 @@ export default function App() {
           {tab==="done" && (
             <div>
               <div style={{display:"flex",justifyContent:"flex-end",marginBottom:8}}>
-<<<<<<< HEAD
-                <button onClick={()=>exportExcel(reqs,"전체연차내역.csv")} style={XLBTN}>📥 전체 엑셀 저장</button>
-=======
                 <button onClick={()=>exportCsv(reqs,"전체연차내역.csv")} style={XLBTN}>📥 전체 엑셀 저장</button>
->>>>>>> 0aaca5d (Firebase 완전 연동 최종버전)
               </div>
               <div style={SC}>
                 {allDone.length===0 && <div style={{padding:"32px",textAlign:"center",color:"#BBB",fontSize:14}}>내역이 없어요</div>}
@@ -893,15 +781,9 @@ export default function App() {
                 <div style={SC}>
                   <div style={{padding:"20px",display:"flex",flexDirection:"column",gap:12}}>
                     <div style={{fontSize:14,color:"#444",lineHeight:1.6}}>테스트 데이터를 초기화합니다.</div>
-<<<<<<< HEAD
-                    <button onClick={()=>{setReqs([]); addLog("AUTH","[부장] 신청내역 초기화");}} style={{width:"100%",padding:"14px",background:"#FFF0F0",border:"1.5px solid #E53935",borderRadius:12,color:"#E53935",fontSize:14,fontWeight:600,cursor:"pointer"}}>📋 신청 내역 전체 초기화</button>
-                    <button onClick={()=>setLogs([])} style={{width:"100%",padding:"14px",background:"#FFF8E1",border:"1.5px solid #F57F17",borderRadius:12,color:"#F57F17",fontSize:14,fontWeight:600,cursor:"pointer"}}>🗒 시스템 로그 초기화</button>
-                    <button onClick={()=>{setReqs([]); setLogs([]); addLog("AUTH","[부장] 전체 초기화");}} style={{width:"100%",padding:"14px",background:"#222",border:"none",borderRadius:12,color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer"}}>⚠️ 전체 초기화 (신청+로그)</button>
-=======
                     <button onClick={async()=>{ const snap=await getDocs(collection(db,"reqs")); snap.docs.forEach(d=>deleteDoc(doc(db,"reqs",d.id))); addLog("AUTH","[부장] 신청내역 초기화");}} style={{width:"100%",padding:"14px",background:"#FFF0F0",border:"1.5px solid #E53935",borderRadius:12,color:"#E53935",fontSize:14,fontWeight:600,cursor:"pointer"}}>📋 신청 내역 전체 초기화</button>
                     <button onClick={async()=>{ const snap=await getDocs(collection(db,"logs")); snap.docs.forEach(d=>deleteDoc(doc(db,"logs",d.id)));}} style={{width:"100%",padding:"14px",background:"#FFF8E1",border:"1.5px solid #F57F17",borderRadius:12,color:"#F57F17",fontSize:14,fontWeight:600,cursor:"pointer"}}>🗒 시스템 로그 초기화</button>
                     <button onClick={async()=>{ const r=await getDocs(collection(db,"reqs")); r.docs.forEach(d=>deleteDoc(doc(db,"reqs",d.id))); const l=await getDocs(collection(db,"logs")); l.docs.forEach(d=>deleteDoc(doc(db,"logs",d.id))); addLog("AUTH","[부장] 전체 초기화");}} style={{width:"100%",padding:"14px",background:"#222",border:"none",borderRadius:12,color:"#fff",fontSize:14,fontWeight:600,cursor:"pointer"}}>⚠️ 전체 초기화 (신청+로그)</button>
->>>>>>> 0aaca5d (Firebase 완전 연동 최종버전)
                     <div style={{fontSize:12,color:"#BBB",textAlign:"center"}}>※ 인원 데이터는 초기화되지 않습니다.</div>
                   </div>
                 </div>
