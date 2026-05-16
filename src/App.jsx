@@ -502,12 +502,6 @@ export default function App() {
 
   function ApplyTab() {
     const [localCustom, setLocalCustom] = useState(form.reasonCustom);
-
-    const handleInput = (val) => {
-      setLocalCustom(val);
-      setForm(f => ({...f, reasonCustom: val}));
-    };
-
     const needsDetail = form.reasonType === "기타" || form.reasonType === "병가" || form.reasonType === "공가";
     const placeholder = form.reasonType === "병가" ? "병명 또는 증상을 입력하세요"
                       : form.reasonType === "공가" ? "공적 사유를 입력하세요"
@@ -547,7 +541,8 @@ export default function App() {
                 placeholder={placeholder}
                 style={{...INP, marginBottom:16}}
                 value={localCustom}
-                onChange={e => handleInput(e.target.value)}
+                onChange={e => { setLocalCustom(e.target.value); setForm(f=>({...f, reasonCustom: e.target.value})); }}
+                onCompositionEnd={e => { setLocalCustom(e.target.value); setForm(f=>({...f, reasonCustom: e.target.value})); }}
               />
             )}
             {doneMsg
