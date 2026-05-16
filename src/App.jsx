@@ -500,8 +500,7 @@ export default function App() {
     );
   }
 
-  function ApplyTab() {
-    const [localCustom, setLocalCustom] = useState(form.reasonCustom);
+function ApplyTab() {
     const needsDetail = form.reasonType === "기타" || form.reasonType === "병가" || form.reasonType === "공가";
     const placeholder = form.reasonType === "병가" ? "병명 또는 증상을 입력하세요"
                       : form.reasonType === "공가" ? "공적 사유를 입력하세요"
@@ -531,18 +530,16 @@ export default function App() {
             <div style={{fontSize:12,color:"#999",marginBottom:8}}>사유</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:needsDetail?10:16}}>
               {REASONS.map(r=>(
-                <button key={r} onClick={()=>{ setLocalCustom(""); setForm(f=>({...f,reasonType:r,reasonCustom:""})); }}
+                <button key={r} onClick={()=>setForm(f=>({...f,reasonType:r,reasonCustom:""}))}
                   style={{padding:"12px 4px",border:form.reasonType===r?"2px solid #5046A6":"1.5px solid #EFEFEF",borderRadius:12,background:form.reasonType===r?"#F0EFFE":"#FAFAFA",cursor:"pointer",fontSize:13,fontWeight:form.reasonType===r?600:400,color:form.reasonType===r?"#5046A6":"#666"}}>{r}</button>
               ))}
             </div>
             {needsDetail && (
-              <input
-                type="text"
+              <textarea
                 placeholder={placeholder}
-                style={{...INP, marginBottom:16}}
-                value={localCustom}
-                onChange={e => { setLocalCustom(e.target.value); setForm(f=>({...f, reasonCustom: e.target.value})); }}
-                onCompositionEnd={e => { setLocalCustom(e.target.value); setForm(f=>({...f, reasonCustom: e.target.value})); }}
+                style={{...INP, marginBottom:16, resize:"none", height:72}}
+                defaultValue={form.reasonCustom}
+                onBlur={e=>setForm(f=>({...f, reasonCustom: e.target.value}))}
               />
             )}
             {doneMsg
