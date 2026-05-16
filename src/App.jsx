@@ -41,6 +41,53 @@ const REASONS  = ["개인사유","병가","공가","기타"];
 const ROLES    = ["부장","차장","과장","대리","주임"];
 const JISAS    = ["본사","수도권북부","수도권남부","중부지사","남부지사"];
 const ADMIN    = { id:"admin", name:"admin", role:"개발자", pw:"admin@wibs", jisa:"전체", phone:"", region:null, managerId:null, joinDate:"" };
+// ── 텔레그램 알림 ──
+const TG_TOKEN = "8624528654:AAGDshXrjCtNXxeCVYq7BLmTq7iFE0RyI5w";
+const TG_CHAT  = {
+  "u00": null,       // 이경수 부장 (미등록)
+  "u01": null,       // 전병준 차장
+  "u02": null,       // 정윤영 차장
+  "u03": null,       // 김선용 과장
+  "u10": null,       // 최순민 차장
+  "u11": null,       // 김성권 차장
+  "u12": 85371463,   // 최성 과장
+  "u13": null,       // 배재열 과장
+  "u14": null,       // 김도영 과장
+  "u20": null,       // 김규연 대리
+  "u21": null,       // 유근우 대리
+  "u22": null,       // 장문석 대리
+  "u23": null,       // 장성진 대리
+  "u24": null,       // 차윤철 대리
+  "u25": null,       // 이종명 주임
+  "u30": null,       // 김동윤 대리
+  "u31": null,       // 박상혁 대리
+  "u32": null,       // 박훈희 대리
+  "u33": null,       // 서석현 대리
+  "u34": null,       // 황언모 대리
+  "u40": null,       // 김준연 대리
+  "u41": null,       // 박지영 대리
+  "u42": null,       // 안병욱 대리
+  "u43": null,       // 양형주 대리
+  "u44": null,       // 이재민 대리
+  "u45": null,       // 강명진 주임
+  "u46": null,       // 강호연 주임
+  "u47": null,       // 장호섭 주임
+  "u50": null,       // 구상회 대리
+  "u51": null,       // 최성일 대리
+  "u52": null,       // 이형탁 대리
+  "u53": null,       // 이선우 대리
+};
+
+async function sendTg(chatId, text) {
+  if (!chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({chat_id: chatId, text, parse_mode:"HTML"})
+    });
+  } catch(e) { console.log("텔레그램 전송 실패", e); }
+}
 const LOG_COL  = {AUTH:"#1565C0",APPLY:"#2E7D32",APPROVE:"#4CAF50",REJECT:"#E53935",EDIT:"#F57F17",ERROR:"#B71C1C"};
 
 // ── 공휴일 API ──
