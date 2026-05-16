@@ -41,10 +41,11 @@ const REASONS  = ["개인사유","병가","공가","기타"];
 const ROLES    = ["부장","차장","과장","대리","주임"];
 const JISAS    = ["본사","수도권북부","수도권남부","중부지사","남부지사"];
 const ADMIN    = { id:"admin", name:"admin", role:"개발자", pw:"admin@wibs", jisa:"전체", phone:"", region:null, managerId:null, joinDate:"" };
+
 // ── 텔레그램 알림 ──
 const TG_TOKEN = "8624528654:AAGDshXrjCtNXxeCVYq7BLmTq7iFE0RyI5w";
 const TG_CHAT  = {
-  "u00": null,       // 이경수 부장 (미등록)
+  "u00": null,       // 이경수 부장
   "u01": null,       // 전병준 차장
   "u02": null,       // 정윤영 차장
   "u03": null,       // 김선용 과장
@@ -88,6 +89,7 @@ async function sendTg(chatId, text) {
     });
   } catch(e) { console.log("텔레그램 전송 실패", e); }
 }
+
 const LOG_COL  = {AUTH:"#1565C0",APPLY:"#2E7D32",APPROVE:"#4CAF50",REJECT:"#E53935",EDIT:"#F57F17",ERROR:"#B71C1C"};
 
 // ── 공휴일 API ──
@@ -213,7 +215,7 @@ export default function App() {
   const [loginErr,   setLoginErr]   = useState("");
   const [tab,   setTab]     = useState("home");
   const [modal, setModal]   = useState(null);
-  const [editJoin, setEditJoin] = useState(null); // {uid, val(입사일), phone(전화번호)}
+  const [editJoin, setEditJoin] = useState(null);
   const [form,  setForm]    = useState({from:"", to:"", reasonType:"개인사유", reasonCustom:""});
   const [formDays, setFormDays] = useState(null);
   const [doneMsg, setDoneMsg] = useState("");
@@ -221,6 +223,7 @@ export default function App() {
   const [selUser,  setSelUser]  = useState(null);
   const [newUser,  setNewUser]  = useState({name:"",role:"대리",jisa:"중부지사",phone:"010-",region:"",managerId:"",joinDate:""});
   const [csvModal, setCsvModal] = useState(null);
+  const [logoutConfirm, setLogoutConfirm] = useState(false); // ← 로그아웃 확인 팝업
 
   const empById = id => users.find(x => x.id === id) || {};
   const usedDays = uid => reqs.filter(r => r.empId===uid && r.step==="완료").reduce((s,r) => s+r.days, 0);
@@ -240,6 +243,18 @@ export default function App() {
     });
     return () => { unsubReqs(); unsubLogs(); };
   }, []);
+
+  // ── 뒤로가기 감지 ──
+  useEffect(() => {
+    if (!cu) return;
+    const handleBack = () => {
+      setLogoutConfirm(true);
+      window.history.pushState(null, "", window.location.href);
+    };
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", handleBack);
+    return () => window.removeEventListener("popstate", handleBack);
+  }, [cu]);
 
   function addLog(type, msg) {
     addDoc(collection(db, "logs"), {time: new Date().toLocaleTimeString("ko-KR"), type, msg});
@@ -283,7 +298,7 @@ export default function App() {
 
   function logout() {
     if (cu) addLog("AUTH",`로그아웃: ${cu.name}`);
-    setCu(null); setLoginInput({name:"",pw:""}); setLoginErr(""); setModal(null);
+    setCu(null); setLoginInput({name:"",pw:""}); setLoginErr(""); setModal(null); setLogoutConfirm(false);
   }
 
   async function submitLeave() {
@@ -295,15 +310,14 @@ export default function App() {
     const newReq = {id:"r"+Date.now(), empId:cu.id, type:"연차", from:form.from, to:form.to, days, reason, step, history:[]};
     addDoc(collection(db, "reqs"), newReq);
     addLog("APPLY", `휴가신청: ${cu.name} / ${days}일(근무일) / ${reason} → ${step}`);
-    // 상급자에게 알림
-const mgr = users.find(u => u.id === cu.managerId);
-if (mgr) sendTg(TG_CHAT[mgr.id], 
-  `📋 <b>연차 신청 알림</b>\n신청자: ${cu.name} ${cu.role}\n기간: ${form.from} ~ ${form.to}\n일수: ${days}일\n사유: ${reason}`);
+    const mgr = users.find(u => u.id === cu.managerId);
+    if (mgr) sendTg(TG_CHAT[mgr.id],
+      `📋 <b>연차 신청 알림</b>\n신청자: ${cu.name} ${cu.role}\n기간: ${form.from} ~ ${form.to}\n일수: ${days}일\n사유: ${reason}`);
     setForm({from:"",to:"",reasonType:"개인사유",reasonCustom:""}); setFormDays(null);
     setDoneMsg("신청이 완료됐어요!"); setTimeout(() => { setDoneMsg(""); setTab("home"); }, 1200);
   }
 
-async function handleApprove(req) {
+  async function handleApprove(req) {
     let updated;
     if (cu.role==="과장") { updated={...req,step:"차장승인대기",history:[...req.history,{actor:cu.name,action:"과장승인"}]}; addLog("APPROVE",`과장승인: ${cu.name}→${empById(req.empId).name}`); }
     else if (cu.role==="차장") { updated={...req,step:"완료",history:[...req.history,{actor:cu.name,action:"차장승인"}]}; addLog("APPROVE",`차장승인: ${cu.name}→${empById(req.empId).name}`); }
@@ -315,6 +329,7 @@ async function handleApprove(req) {
     if (docRef) await updateDoc(doc(db,"reqs",docRef.id), updated);
     setModal(null);
   }
+
   async function handleReject(req, reason) {
     const updated = {...req,step:"반려",history:[...req.history,{actor:cu.name,action:"반려",reason}]};
     sendTg(TG_CHAT[req.empId],
@@ -326,7 +341,6 @@ async function handleApprove(req) {
     setModal(null);
   }
 
-  // ── 입사일 + 전화번호 저장 (통합) ──
   function saveJoin() {
     const u = empById(editJoin.uid);
     addLog("EDIT",`정보수정: ${u.name} / 입사일: ${editJoin.val} / 전화: ${editJoin.phone}`);
@@ -345,7 +359,6 @@ async function handleApprove(req) {
   function removeUser(uid) { addLog("EDIT",`퇴사: ${empById(uid).name}`); setUsers(users.filter(u=>u.id!==uid)); setSelUser(null); }
   function updateRole(uid, role) { addLog("EDIT",`직급변경: ${empById(uid).name}→${role}`); setUsers(users.map(u=>u.id===uid?{...u,role}:u)); }
   function updateJisa(uid, jisa) { addLog("EDIT",`지사변경: ${empById(uid).name}→${jisa}`); setUsers(users.map(u=>u.id===uid?{...u,jisa}:u)); }
-  // ── 전화번호만 빠르게 수정 (부장 인원관리 패널용) ──
   function updatePhone(uid, phone) { addLog("EDIT",`전화변경: ${empById(uid).name}→${phone}`); setUsers(users.map(u=>u.id===uid?{...u,phone}:u)); }
 
   // ── 공통 컴포넌트 ──
@@ -365,6 +378,22 @@ async function handleApprove(req) {
         </div>
         <div style={{fontSize:11,opacity:0.6,marginTop:8,textAlign:"center"}}>
           {user.joinDate ? `입사 ${user.joinDate} · 근속 ${workedText(user.joinDate)}` : "입사일 미입력"}
+        </div>
+      </div>
+    );
+  }
+
+  // ── 로그아웃 확인 팝업 ──
+  function LogoutModal() {
+    return (
+      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:400,padding:"0 24px"}}>
+        <div style={{background:"#fff",borderRadius:20,padding:"28px 24px",width:"100%",maxWidth:300,textAlign:"center"}}>
+          <div style={{fontSize:18,fontWeight:700,marginBottom:8,color:"#222"}}>로그아웃</div>
+          <div style={{fontSize:14,color:"#999",marginBottom:24}}>로그아웃 하시겠습니까?</div>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setLogoutConfirm(false)} style={B2("#999")}>아니오</button>
+            <button onClick={logout} style={B1("#E53935")}>네</button>
+          </div>
         </div>
       </div>
     );
@@ -433,7 +462,6 @@ async function handleApprove(req) {
     );
   }
 
-  // ── 입사일 + 전화번호 통합 수정 모달 ──
   function EditJoinModal() {
     return (
       <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200,padding:"0 24px"}}>
@@ -532,17 +560,23 @@ async function handleApprove(req) {
   const myReqs = reqs.filter(r => r.empId===cu.id);
   const pend   = myPending(cu);
 
+  // 로그아웃 버튼 공통 컴포넌트
+  const LogoutBtn = () => (
+    <button onClick={()=>setLogoutConfirm(true)} style={{background:"none",border:"none",fontSize:13,color:"#999",cursor:"pointer"}}>로그아웃</button>
+  );
+
   // ── 대리/주임 ──
   if (cu.role==="대리"||cu.role==="주임") {
     const mgrU    = empById(cu.managerId);
     const grandMgr = mgrU.role==="과장" ? empById(mgrU.managerId) : null;
     return (
       <div style={PH}>
+        {logoutConfirm && <LogoutModal/>}
         {modal && <ApproveModal req={modal.data}/>}
         {csvModal && <CsvModal/>}
         <div style={TB}>
           <div style={{fontWeight:700,fontSize:16,color:"#222"}}>{tab==="home"?"홈":tab==="apply"?"휴가 신청":"신청 내역"}</div>
-          <button onClick={logout} style={{background:"none",border:"none",fontSize:13,color:"#999",cursor:"pointer"}}>로그아웃</button>
+          <LogoutBtn/>
         </div>
         <div style={BD}>
           {tab==="home" && (
@@ -609,12 +643,13 @@ async function handleApprove(req) {
     const mgrU     = empById(cu.managerId);
     return (
       <div style={PH}>
+        {logoutConfirm && <LogoutModal/>}
         {modal && <ApproveModal req={modal.data}/>}
         {editJoin && <EditJoinModal/>}
         {csvModal && <CsvModal/>}
         <div style={TB}>
           <div style={{fontWeight:700,fontSize:16,color:"#222"}}>{tab==="home"?"홈":tab==="apply"?"휴가 신청":tab==="list"?"팀 내역":"팀원 관리"}</div>
-          <button onClick={logout} style={{background:"none",border:"none",fontSize:13,color:"#999",cursor:"pointer"}}>로그아웃</button>
+          <LogoutBtn/>
         </div>
         <div style={BD}>
           {tab==="home" && (
@@ -664,7 +699,6 @@ async function handleApprove(req) {
               ))}
             </div>
           )}
-          {/* 과장: 팀원 관리 (입사일 + 전화번호) */}
           {tab==="team" && (
             <div>
               <div style={{fontSize:12,color:"#999",marginBottom:8,paddingLeft:2}}>탭해서 입사일·전화번호를 수정하세요</div>
@@ -699,12 +733,13 @@ async function handleApprove(req) {
     const allR     = reqs.filter(r=>myEmpIds.includes(r.empId));
     return (
       <div style={PH}>
+        {logoutConfirm && <LogoutModal/>}
         {modal && <ApproveModal req={modal.data}/>}
         {editJoin && <EditJoinModal/>}
         {csvModal && <CsvModal/>}
         <div style={TB}>
           <div style={{fontWeight:700,fontSize:16,color:"#222"}}>{tab==="home"?"홈":tab==="apply"?"휴가 신청":tab==="pending"?`대기(${pend.length})`:tab==="list"?"전체내역":"팀원관리"}</div>
-          <button onClick={logout} style={{background:"none",border:"none",fontSize:13,color:"#999",cursor:"pointer"}}>로그아웃</button>
+          <LogoutBtn/>
         </div>
         <div style={BD}>
           {tab==="home" && (
@@ -778,7 +813,6 @@ async function handleApprove(req) {
               </div>
             </div>
           )}
-          {/* 차장: 전체 인원 입사일 + 전화번호 수정 */}
           {tab==="team" && (
             <div>
               <div style={{fontSize:12,color:"#999",marginBottom:8,paddingLeft:2}}>탭해서 입사일·전화번호를 수정하세요 (전체 인원)</div>
@@ -812,12 +846,13 @@ async function handleApprove(req) {
     const allDone = reqs.filter(r=>r.step==="완료"||r.step==="반려");
     return (
       <div style={PH}>
+        {logoutConfirm && <LogoutModal/>}
         {modal && <ApproveModal req={modal.data}/>}
         {editJoin && <EditJoinModal/>}
         {csvModal && <CsvModal/>}
         <div style={TB}>
           <div style={{fontWeight:700,fontSize:16,color:"#222"}}>{tab==="home"?"전체 현황":tab==="apply"?"휴가 신청":tab==="pending"?"진행 중":tab==="done"?"완료/반려":"인원 관리"}</div>
-          <button onClick={logout} style={{background:"none",border:"none",fontSize:13,color:"#999",cursor:"pointer"}}>로그아웃</button>
+          <LogoutBtn/>
         </div>
         <div style={BD}>
           {tab==="home" && (
@@ -936,7 +971,6 @@ async function handleApprove(req) {
                                 <button key={j} onClick={()=>updateJisa(x.id,j)} style={{padding:"6px 14px",border:x.jisa===j?"2px solid #5046A6":"1.5px solid #EFEFEF",borderRadius:10,background:x.jisa===j?"#F0EFFE":"#fff",color:x.jisa===j?"#5046A6":"#666",cursor:"pointer",fontSize:12,fontWeight:x.jisa===j?600:400}}>{j}</button>
                               ))}
                             </div>
-                            {/* 부장: 입사일 + 전화번호 통합 수정 버튼 */}
                             <div style={{fontSize:12,color:"#999",marginBottom:6}}>입사일 · 전화번호</div>
                             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
                               <div style={{flex:1,fontSize:13,color:"#444"}}>{x.joinDate||"입사일 미입력"} · {x.phone||"번호 미입력"}</div>
@@ -985,9 +1019,10 @@ async function handleApprove(req) {
   if (cu.role==="개발자") {
     return (
       <div style={PH}>
+        {logoutConfirm && <LogoutModal/>}
         <div style={TB}>
           <div style={{fontWeight:700,fontSize:16,color:"#222"}}>{tab==="home"?"전체 현황":tab==="users"?"전체 인원":tab==="reqs"?"전체 신청":"시스템 로그"}</div>
-          <button onClick={logout} style={{background:"none",border:"none",fontSize:13,color:"#999",cursor:"pointer"}}>로그아웃</button>
+          <LogoutBtn/>
         </div>
         <div style={BD}>
           {tab==="home" && (
