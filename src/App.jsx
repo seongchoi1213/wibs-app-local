@@ -302,7 +302,9 @@ export default function App() {
   }
 
   async function submitLeave() {
-    const reason = form.reasonType==="기타" ? form.reasonCustom.trim() : form.reasonType;
+    const needsDetail = form.reasonType==="기타"||form.reasonType==="병가"||form.reasonType==="공가";
+    const reason = needsDetail ? `${form.reasonType}(${form.reasonCustom.trim()})` : form.reasonType;
+    if (needsDetail && !form.reasonCustom.trim()) { setDoneMsg("상세 사유를 입력해 주세요."); return; }
     if (!form.from||!form.to||!reason) { setDoneMsg("모든 항목을 입력해 주세요."); return; }
     const days = await calcWorkdays(form.from, form.to);
     if (days === 0) { setDoneMsg("선택한 기간에 근무일이 없어요. (주말·공휴일)"); return; }
@@ -499,6 +501,18 @@ export default function App() {
   }
 
   function ApplyTab() {
+    const [localCustom, setLocalCustom] = useState(form.reasonCustom);
+
+    const handleInput = (val) => {
+      setLocalCustom(val);
+      setForm(f => ({...f, reasonCustom: val}));
+    };
+
+    const needsDetail = form.reasonType === "기타" || form.reasonType === "병가" || form.reasonType === "공가";
+    const placeholder = form.reasonType === "병가" ? "병명 또는 증상을 입력하세요"
+                      : form.reasonType === "공가" ? "공적 사유를 입력하세요"
+                      : "직접 입력";
+
     return (
       <div>
         <div style={{background:"#FFF8E1",borderRadius:14,padding:"12px 16px",marginBottom:12,display:"flex",gap:10,alignItems:"flex-start"}}>
@@ -521,13 +535,21 @@ export default function App() {
               </div>
             )}
             <div style={{fontSize:12,color:"#999",marginBottom:8}}>사유</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:form.reasonType==="기타"?10:16}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:needsDetail?10:16}}>
               {REASONS.map(r=>(
-                <button key={r} onClick={()=>setForm({...form,reasonType:r,reasonCustom:""})}
+                <button key={r} onClick={()=>{ setLocalCustom(""); setForm(f=>({...f,reasonType:r,reasonCustom:""})); }}
                   style={{padding:"12px 4px",border:form.reasonType===r?"2px solid #5046A6":"1.5px solid #EFEFEF",borderRadius:12,background:form.reasonType===r?"#F0EFFE":"#FAFAFA",cursor:"pointer",fontSize:13,fontWeight:form.reasonType===r?600:400,color:form.reasonType===r?"#5046A6":"#666"}}>{r}</button>
               ))}
             </div>
-            {form.reasonType==="기타" && <input type="text" placeholder="직접 입력" style={{...INP,marginBottom:16}} value={form.reasonCustom} onChange={e=>setForm({...form,reasonCustom:e.target.value})}/>}
+            {needsDetail && (
+              <input
+                type="text"
+                placeholder={placeholder}
+                style={{...INP, marginBottom:16}}
+                value={localCustom}
+                onChange={e => handleInput(e.target.value)}
+              />
+            )}
             {doneMsg
               ? <div style={{textAlign:"center",padding:"13px",background:"#E8F4FF",borderRadius:12,color:"#2196F3",fontWeight:500,fontSize:14}}>{doneMsg}</div>
               : <button onClick={submitLeave} style={{...B1(),borderRadius:12}}>신청하기</button>
