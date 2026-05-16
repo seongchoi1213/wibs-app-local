@@ -295,23 +295,30 @@ export default function App() {
     const newReq = {id:"r"+Date.now(), empId:cu.id, type:"연차", from:form.from, to:form.to, days, reason, step, history:[]};
     addDoc(collection(db, "reqs"), newReq);
     addLog("APPLY", `휴가신청: ${cu.name} / ${days}일(근무일) / ${reason} → ${step}`);
+    // 상급자에게 알림
+const mgr = users.find(u => u.id === cu.managerId);
+if (mgr) sendTg(TG_CHAT[mgr.id], 
+  `📋 <b>연차 신청 알림</b>\n신청자: ${cu.name} ${cu.role}\n기간: ${form.from} ~ ${form.to}\n일수: ${days}일\n사유: ${reason}`);
     setForm({from:"",to:"",reasonType:"개인사유",reasonCustom:""}); setFormDays(null);
     setDoneMsg("신청이 완료됐어요!"); setTimeout(() => { setDoneMsg(""); setTab("home"); }, 1200);
   }
 
-  async function handleApprove(req) {
+async function handleApprove(req) {
     let updated;
     if (cu.role==="과장") { updated={...req,step:"차장승인대기",history:[...req.history,{actor:cu.name,action:"과장승인"}]}; addLog("APPROVE",`과장승인: ${cu.name}→${empById(req.empId).name}`); }
     else if (cu.role==="차장") { updated={...req,step:"완료",history:[...req.history,{actor:cu.name,action:"차장승인"}]}; addLog("APPROVE",`차장승인: ${cu.name}→${empById(req.empId).name}`); }
     else if (cu.role==="부장") { updated={...req,step:"완료",history:[...req.history,{actor:cu.name,action:"부장승인"}]}; addLog("APPROVE",`부장승인: ${cu.name}→${empById(req.empId).name}`); }
+    sendTg(TG_CHAT[req.empId],
+      `✅ <b>연차 승인 알림</b>\n${cu.name} ${cu.role}이 승인했습니다.\n기간: ${req.from} ~ ${req.to}\n일수: ${req.days}일`);
     const snap = await getDocs(collection(db,"reqs"));
     const docRef = snap.docs.find(d => d.data().id===req.id);
     if (docRef) await updateDoc(doc(db,"reqs",docRef.id), updated);
     setModal(null);
   }
-
   async function handleReject(req, reason) {
     const updated = {...req,step:"반려",history:[...req.history,{actor:cu.name,action:"반려",reason}]};
+    sendTg(TG_CHAT[req.empId],
+      `❌ <b>연차 반려 알림</b>\n${cu.name} ${cu.role}이 반려했습니다.\n사유: ${reason}\n기간: ${req.from} ~ ${req.to}`);
     const snap = await getDocs(collection(db,"reqs"));
     const docRef = snap.docs.find(d => d.data().id===req.id);
     if (docRef) await updateDoc(doc(db,"reqs",docRef.id), updated);
